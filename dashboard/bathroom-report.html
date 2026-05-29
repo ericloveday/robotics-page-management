@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bathroom Pass Reports</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #ffffff;
+    --red: #cc0000;
+    --red-dark: #990000;
+    --red-border: #cc0000;
+    --text: #111111;
+    --muted: #666666;
+    --history-bg: #f5f5f5;
+    --radius: 12px;
+    --boy: #1a6fb5;
+    --girl: #b5006e;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Montserrat', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header { margin-bottom: 28px; display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-transform: uppercase;
+  }
+
+  header p { color: #888; font-size: 0.85rem; margin-top: 4px; }
+
+  .controls {
+    background: #1a1a1a;
+    border-radius: var(--radius);
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  .control-group { display: flex; flex-direction: column; gap: 5px; }
+  .control-group label { font-size: 0.72rem; font-weight: 700; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  select, input[type="date"] {
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1px solid #333;
+    background: #111;
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem;
+    cursor: pointer;
+  }
+
+  select:focus, input[type="date"]:focus { outline: none; border-color: var(--red); }
+
+  .btn {
+    padding: 10px 20px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.15s;
+    align-self: flex-end;
+  }
+
+  .btn:hover { background: var(--red-dark); }
+
+  .btn-outline {
+    background: transparent;
+    border: 2px solid #444;
+    color: #aaa;
+  }
+  .btn-outline:hover { border-color: var(--red); color: white; background: transparent; }
+
+  /* Summary cards */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+
+  .summary-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 2px solid #eee;
+    padding: 18px 20px;
+    text-align: center;
+  }
+
+  .summary-card .val {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--red);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+
+  .summary-card .lbl {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  /* Table */
+  .table-card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 2px solid var(--red-border);
+    padding: 24px;
+    margin-bottom: 24px;
+    overflow-x: auto;
+  }
+
+  .table-card h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--muted);
+    border-bottom: 2px solid #eee;
+    cursor: pointer;
+    white-space: nowrap;
+    user-select: none;
+  }
+
+  thead th:hover { color: var(--red); }
+  thead th.sorted { color: var(--red); }
+
+  tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.1s; }
+  tbody tr:hover { background: #fafafa; }
+  tbody tr:last-child { border-bottom: none; }
+
+  tbody td { padding: 10px 12px; }
+
+  .student-name-cell { font-weight: 700; }
+  .gender-dot {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .gender-dot.boy { background: var(--boy); }
+  .gender-dot.girl { background: var(--girl); }
+
+  .val-cell { font-weight: 600; color: var(--red); }
+  .trips-cell { font-weight: 600; color: #333; }
+
+  /* Daily breakdown */
+  .daily-section { margin-top: 8px; }
+  .day-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.82rem;
+    margin-bottom: 4px;
+  }
+  .day-row:nth-child(odd) { background: var(--history-bg); }
+  .day-label { font-weight: 600; color: var(--muted); }
+  .day-val { font-weight: 700; color: var(--red); }
+
+  /* Loading */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 9999;
+  }
+
+  #loading p { color: #aaa; font-size: 1rem; font-weight: 600; }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #333;
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .empty-msg { color: var(--muted); font-style: italic; font-size: 0.9rem; padding: 12px 0; }
+
+  .tab-btns { display: flex; gap: 8px; margin-bottom: 20px; }
+  .tab-btn {
+    padding: 8px 20px;
+    border-radius: 8px;
+    border: 2px solid #333;
+    background: transparent;
+    color: #888;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.15s;
+  }
+  .tab-btn.active { background: var(--red); border-color: var(--red); color: white; }
+  .tab-btn:hover:not(.active) { border-color: var(--red); color: white; }
+
+  .no-data { text-align: center; padding: 40px; color: #888; font-style: italic; }
+
+  /* Print styles */
+  @media print {
+    body { background: white; padding: 10px; }
+    header, .controls, .tab-btns, .btn { display: none !important; }
+    .table-card { border: 1px solid #ccc; box-shadow: none; }
+    .summary-card { border: 1px solid #ccc; }
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Loading report data...</p>
+</div>
+
+<header>
+  <div>
+    <h1>Bathroom Pass Reports</h1>
+    <p>Connected to live Firebase data</p>
+  </div>
+  <div style="display:flex; gap:10px; align-self:center;">
+    <button class="btn btn-outline" onclick="window.print()">🖨 Print</button>
+    <button class="btn" onclick="exportCSV()">⬇ Export CSV</button>
+  </div>
+</header>
+
+<!-- Tabs -->
+<div class="tab-btns">
+  <button class="tab-btn active" id="tab-weekly" onclick="switchTab('weekly')">Weekly</button>
+  <button class="tab-btn" id="tab-monthly" onclick="switchTab('monthly')">Monthly</button>
+  <button class="tab-btn" id="tab-custom" onclick="switchTab('custom')">Custom Range</button>
+</div>
+
+<!-- Controls -->
+<div class="controls" id="controls-weekly">
+  <div class="control-group">
+    <label>Week</label>
+    <select id="week-select" onchange="renderReport()"></select>
+  </div>
+  <div class="control-group">
+    <label>Teacher</label>
+    <select id="weekly-teacher-filter" onchange="renderReport()">
+      <option value="">All Teachers</option>
+      <option>Hartley</option>
+      <option>Loveday</option>
+      <option>Scales</option>
+      <option>Zinsmeister</option>
+    </select>
+  </div>
+</div>
+
+<div class="controls" id="controls-monthly" style="display:none;">
+  <div class="control-group">
+    <label>Month</label>
+    <select id="month-select" onchange="renderReport()"></select>
+  </div>
+  <div class="control-group">
+    <label>Teacher</label>
+    <select id="monthly-teacher-filter" onchange="renderReport()">
+      <option value="">All Teachers</option>
+      <option>Hartley</option>
+      <option>Loveday</option>
+      <option>Scales</option>
+      <option>Zinsmeister</option>
+    </select>
+  </div>
+</div>
+
+<div class="controls" id="controls-custom" style="display:none;">
+  <div class="control-group">
+    <label>Start Date</label>
+    <input type="date" id="custom-start">
+  </div>
+  <div class="control-group">
+    <label>End Date</label>
+    <input type="date" id="custom-end">
+  </div>
+  <div class="control-group">
+    <label>Teacher</label>
+    <select id="custom-teacher-filter">
+      <option value="">All Teachers</option>
+      <option>Hartley</option>
+      <option>Loveday</option>
+      <option>Scales</option>
+      <option>Zinsmeister</option>
+    </select>
+  </div>
+  <button class="btn" onclick="renderReport()">Generate</button>
+</div>
+
+<!-- Summary -->
+<div class="summary-grid" id="summary-grid"></div>
+
+<!-- Student Table -->
+<div class="table-card" id="main-table-card">
+  <h2 id="table-title">Student Summary</h2>
+  <div id="table-container"><p class="no-data">No data for this period.</p></div>
+</div>
+
+<!-- Daily Breakdown -->
+<div class="table-card" id="daily-table-card">
+  <h2>Daily Breakdown</h2>
+  <div id="daily-container"><p class="no-data">No data for this period.</p></div>
+</div>
+
+<!-- Weekly Pass Usage -->
+<div class="table-card" style="border-color: #cc0000; margin-bottom: 24px;">
+  <h2>🚫 Weekly Pass Usage — Current Week</h2>
+  <p style="font-size:0.82rem; color:var(--muted); margin-bottom:16px;">Students who have used 3 or more of their 5 passes this week.</p>
+  <div id="pass-usage-container"><p class="no-data">Loading...</p></div>
+</div>
+
+<!-- Data Management -->
+<div class="table-card" style="border-color: #e6a817; margin-top: 24px;">
+  <h2 style="color: #e6a817;">⚠ Data Management</h2>
+  <p style="font-size:0.82rem; color: var(--muted); margin-bottom: 16px;">Find and delete individual history entries — useful if a student forgot to check back in. Deletions are permanent.</p>
+  <div style="display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; align-items:flex-end;">
+    <div class="control-group" style="flex:1; min-width:180px;">
+      <label>Filter by Student</label>
+      <select id="dm-student-filter" onchange="renderDataManager()">
+        <option value="">-- All Students --</option>
+      </select>
+    </div>
+    <div class="control-group">
+      <label>Filter by Date</label>
+      <input type="date" id="dm-date-filter" onchange="renderDataManager()">
+    </div>
+    <button class="btn btn-outline" onclick="document.getElementById('dm-student-filter').value=''; document.getElementById('dm-date-filter').value=''; renderDataManager()">Clear Filters</button>
+  </div>
+  <div id="dm-container"><p class="no-data">No entries found.</p></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBsja7ruNaLkTDTxyga9qd9TZG2Zz5AjHA",
+    authDomain: "bathroom-check-out.firebaseapp.com",
+    databaseURL: "https://bathroom-check-out-default-rtdb.firebaseio.com",
+    projectId: "bathroom-check-out",
+    storageBucket: "bathroom-check-out.firebasestorage.app",
+    messagingSenderId: "385219454253",
+    appId: "1:385219454253:web:970acbfe28672f73c45fa4"
+  };
+
+  const STUDENTS = [
+    { name: "Aaliyah H.", gender: "g" }, { name: "Aanya B.", gender: "g" },
+    { name: "Abby M.", gender: "g" }, { name: "Aiden L.", gender: "b" },
+    { name: "Akira B.", gender: "g" }, { name: "Akshay S.", gender: "b" },
+    { name: "Alex B.", gender: "g" }, { name: "Alex F.", gender: "g" },
+    { name: "Alyson H.", gender: "g" }, { name: "Amelia R.", gender: "g" },
+    { name: "Amiyah B.", gender: "g" }, { name: "Ananya M.", gender: "g" },
+    { name: "Aubrey R.", gender: "g" }, { name: "Avery L.", gender: "g" },
+    { name: "Benjamin R.", gender: "b" }, { name: "Bethany M.", gender: "g" },
+    { name: "Buck R.", gender: "b" }, { name: "Cambrie F.", gender: "g" },
+    { name: "Camden S.", gender: "b" }, { name: "Camila S.", gender: "g" },
+    { name: "Catalina E.", gender: "g" }, { name: "Charlotte J.", gender: "g" },
+    { name: "Cole W.", gender: "b" }, { name: "Crews A.", gender: "b" },
+    { name: "Declan B.", gender: "b" }, { name: "Dominick G.", gender: "b" },
+    { name: "Elliott B.", gender: "g" }, { name: "Emberly D.", gender: "g" },
+    { name: "Emma L.", gender: "g" }, { name: "Emma S.", gender: "g" },
+    { name: "Eva D.", gender: "g" }, { name: "Everett B.", gender: "b" },
+    { name: "Gabriel D.", gender: "b" }, { name: "Gabriella K.", gender: "g" },
+    { name: "Grace P.", gender: "g" }, { name: "Grace S.", gender: "g" },
+    { name: "Grayson B.", gender: "b" }, { name: "Hadley P.", gender: "g" },
+    { name: "Hayden C.", gender: "b" }, { name: "Heather H.", gender: "g" },
+    { name: "Holden L.", gender: "b" }, { name: "Holden W.", gender: "b" },
+    { name: "Hunter H.", gender: "b" }, { name: "Ishani H.", gender: "g" },
+    { name: "Izzy K.", gender: "g" }, { name: "Jacey P.", gender: "g" },
+    { name: "Jackson S.", gender: "b" }, { name: "Jacob M.", gender: "b" },
+    { name: "Jacob R.", gender: "b" }, { name: "Jason W.", gender: "b" },
+    { name: "Jeremiah R.", gender: "b" }, { name: "Jordan S.", gender: "b" },
+    { name: "Joshua S.", gender: "b" }, { name: "Josie R.", gender: "g" },
+    { name: "Kaden M.", gender: "b" }, { name: "Kaleb B.", gender: "b" },
+    { name: "Kaye M.", gender: "g" }, { name: "Kayla D.", gender: "g" },
+    { name: "Keegan S.", gender: "b" }, { name: "Kennedy H.", gender: "g" },
+    { name: "Kerslynne M.", gender: "g" }, { name: "Kourtney K.", gender: "g" },
+    { name: "Lalla A.", gender: "g" }, { name: "Laney M.", gender: "g" },
+    { name: "Leslie C.", gender: "g" }, { name: "Liam A.", gender: "b" },
+    { name: "Liam M.", gender: "b" }, { name: "Lincoln C.", gender: "b" },
+    { name: "Louise H.", gender: "g" }, { name: "Lucas L.", gender: "b" },
+    { name: "Lucas M.", gender: "b" }, { name: "Macy K.", gender: "g" },
+    { name: "Maddie S.", gender: "g" }, { name: "Madelyn C.", gender: "g" },
+    { name: "Madelyn L.", gender: "g" }, { name: "Madelyn R.", gender: "g" },
+    { name: "Madison C.", gender: "g" }, { name: "Malachi B.", gender: "b" },
+    { name: "Mason E.", gender: "b" }, { name: "Mason H.", gender: "b" },
+    { name: "Mathis S.", gender: "b" }, { name: "McKenzie M.", gender: "g" },
+    { name: "Mia G.", gender: "g" }, { name: "Morgan B.", gender: "g" },
+    { name: "Nadeline D.", gender: "g" }, { name: "Naomi W.", gender: "g" },
+    { name: "Nate B.", gender: "b" }, { name: "Nikholaus M.", gender: "b" },
+    { name: "Nolan A.", gender: "b" }, { name: "Nora H.", gender: "g" },
+    { name: "Oakley B.", gender: "g" }, { name: "Rachel R.", gender: "g" },
+    { name: "Ritesh N.", gender: "b" }, { name: "Saja A.", gender: "g" },
+    { name: "Sarah M.", gender: "g" }, { name: "Sawyer L.", gender: "b" },
+    { name: "Sean S.", gender: "b" }, { name: "Sebastian E.", gender: "b" },
+    { name: "Simran M.", gender: "g" }, { name: "Sophia C.", gender: "g" },
+    { name: "Sovereign G.", gender: "g" }, { name: "Stevie S.", gender: "g" },
+    { name: "Taelynn G.", gender: "g" }, { name: "Truston L.", gender: "b" },
+    { name: "Veer B.", gender: "b" }, { name: "Victoria M.", gender: "g" },
+    { name: "Will N.", gender: "b" }, { name: "William U.", gender: "b" },
+  ];
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let allHistory = [];
+  let currentTab = 'weekly';
+  let sortCol = 'totalMins';
+  let sortAsc = false;
+
+  // --- Load data ---
+  onValue(ref(db, 'bathroom/history'), (snapshot) => {
+    const data = snapshot.val() || {};
+    allHistory = Object.entries(data).map(([k,v]) => ({...v, _key: k})).sort((a,b) => b.checkedOutAt - a.checkedOutAt);
+    populateSelectors();
+    renderReport();
+    populateStudentFilter();
+    renderDataManager();
+    renderPassUsage();
+    document.getElementById('loading').style.display = 'none';
+  });
+
+  // --- Date helpers ---
+  function startOfWeek(date) {
+    const d = new Date(date);
+    const day = d.getDay();
+    d.setDate(d.getDate() - day);
+    d.setHours(0,0,0,0);
+    return d;
+  }
+
+  function endOfWeek(date) {
+    const d = startOfWeek(date);
+    d.setDate(d.getDate() + 6);
+    d.setHours(23,59,59,999);
+    return d;
+  }
+
+  function formatDate(ts) {
+    return new Date(ts).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+  }
+
+  function formatDateShort(ts) {
+    return new Date(ts).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+
+  function isoDate(date) {
+    return date.toISOString().split('T')[0];
+  }
+
+  // --- Populate selectors ---
+  function populateSelectors() {
+    // Weekly — collect unique week starts from history
+    const weekSel = document.getElementById('week-select');
+    const weekSet = new Set();
+    allHistory.forEach(h => {
+      const ws = isoDate(startOfWeek(new Date(h.checkedOutAt)));
+      weekSet.add(ws);
+    });
+    // Also add current week
+    weekSet.add(isoDate(startOfWeek(new Date())));
+    const weeks = [...weekSet].sort().reverse();
+    weekSel.innerHTML = weeks.map(w => {
+      const start = new Date(w + 'T12:00:00');
+      const end = endOfWeek(start);
+      return `<option value="${w}">${formatDate(start)} – ${formatDate(end)}</option>`;
+    }).join('');
+
+    // Monthly
+    const monthSel = document.getElementById('month-select');
+    const monthSet = new Set();
+    allHistory.forEach(h => {
+      const d = new Date(h.checkedOutAt);
+      monthSet.add(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`);
+    });
+    const now = new Date();
+    monthSet.add(`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`);
+    const months = [...monthSet].sort().reverse();
+    monthSel.innerHTML = months.map(m => {
+      const [y, mo] = m.split('-');
+      const label = new Date(y, mo-1, 1).toLocaleDateString([], { month: 'long', year: 'numeric' });
+      return `<option value="${m}">${label}</option>`;
+    }).join('');
+
+    // Custom defaults
+    const today = isoDate(new Date());
+    const weekAgo = isoDate(new Date(Date.now() - 7*24*60*60*1000));
+    document.getElementById('custom-start').value = weekAgo;
+    document.getElementById('custom-end').value = today;
+  }
+
+  // --- Get teacher filter ---
+  function getTeacherFilter() {
+    if (currentTab === 'weekly') return document.getElementById('weekly-teacher-filter').value;
+    if (currentTab === 'monthly') return document.getElementById('monthly-teacher-filter').value;
+    return document.getElementById('custom-teacher-filter').value;
+  }
+
+  // --- Get date range ---
+  function getDateRange() {
+    if (currentTab === 'weekly') {
+      const val = document.getElementById('week-select').value;
+      const start = new Date(val + 'T12:00:00');
+      return { start: startOfWeek(start).getTime(), end: endOfWeek(start).getTime(), label: `Week of ${formatDate(startOfWeek(start))}` };
+    } else if (currentTab === 'monthly') {
+      const val = document.getElementById('month-select').value;
+      const [y, m] = val.split('-').map(Number);
+      const start = new Date(y, m-1, 1, 0, 0, 0, 0);
+      const end = new Date(y, m, 0, 23, 59, 59, 999);
+      return { start: start.getTime(), end: end.getTime(), label: start.toLocaleDateString([], { month: 'long', year: 'numeric' }) };
+    } else {
+      const s = document.getElementById('custom-start').value;
+      const e = document.getElementById('custom-end').value;
+      if (!s || !e) return null;
+      const start = new Date(s + 'T00:00:00').getTime();
+      const end = new Date(e + 'T23:59:59').getTime();
+      return { start, end, label: `${s} to ${e}` };
+    }
+  }
+
+  // --- Render report ---
+  window.renderReport = function() {
+    const range = getDateRange();
+    if (!range) return;
+    const teacherFilter = getTeacherFilter();
+
+    let filtered = allHistory.filter(h => h.checkedOutAt >= range.start && h.checkedOutAt <= range.end);
+    if (teacherFilter) filtered = filtered.filter(h => (h.teacher || 'Loveday') === teacherFilter);
+
+    // Summary stats
+    const totalTrips = filtered.length;
+    const totalMins = filtered.reduce((sum, h) => sum + Math.floor(h.duration / 60), 0);
+    const uniqueStudents = new Set(filtered.map(h => h.name)).size;
+    const avgMins = totalTrips > 0 ? Math.round(totalMins / totalTrips) : 0;
+
+    document.getElementById('summary-grid').innerHTML = `
+      <div class="summary-card"><div class="val">${totalTrips}</div><div class="lbl">Total Trips</div></div>
+      <div class="summary-card"><div class="val">${totalMins}m</div><div class="lbl">Total Time</div></div>
+      <div class="summary-card"><div class="val">${uniqueStudents}</div><div class="lbl">Students Out</div></div>
+      <div class="summary-card"><div class="val">${avgMins}m</div><div class="lbl">Avg Trip</div></div>
+    `;
+
+    document.getElementById('table-title').textContent = `Student Summary — ${range.label}`;
+
+    // Per-student stats
+    const studentMap = {};
+    STUDENTS.forEach(s => {
+      studentMap[s.name] = { name: s.name, gender: s.gender, trips: 0, totalMins: 0, days: {} };
+    });
+
+    filtered.forEach(h => {
+      if (!studentMap[h.name]) return;
+      const s = studentMap[h.name];
+      s.trips++;
+      s.totalMins += Math.floor(h.duration / 60);
+      const day = new Date(h.checkedOutAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric' });
+      const dayKey = isoDate(new Date(h.checkedOutAt));
+      if (!s.days[dayKey]) s.days[dayKey] = { label: day, trips: 0, mins: 0 };
+      s.days[dayKey].trips++;
+      s.days[dayKey].mins += Math.floor(h.duration / 60);
+    });
+
+    // Only show students with at least 1 trip
+    let rows = Object.values(studentMap).filter(s => s.trips > 0);
+
+    // Sort
+    rows.sort((a, b) => {
+      const av = a[sortCol], bv = b[sortCol];
+      return sortAsc ? (av > bv ? 1 : -1) : (av < bv ? 1 : -1);
+    });
+
+    if (!rows.length) {
+      document.getElementById('table-container').innerHTML = '<p class="no-data">No bathroom trips recorded for this period.</p>';
+      document.getElementById('daily-container').innerHTML = '<p class="no-data">No data for this period.</p>';
+      return;
+    }
+
+    // Main table
+    const thead = `
+      <thead>
+        <tr>
+          <th onclick="sortBy('name')" class="${sortCol==='name'?'sorted':''}">Student ${sortCol==='name'?(sortAsc?'↑':'↓'):''}</th>
+          <th onclick="sortBy('trips')" class="${sortCol==='trips'?'sorted':''}">Trips ${sortCol==='trips'?(sortAsc?'↑':'↓'):''}</th>
+          <th onclick="sortBy('totalMins')" class="${sortCol==='totalMins'?'sorted':''}">Total Time ${sortCol==='totalMins'?(sortAsc?'↑':'↓'):''}</th>
+        </tr>
+      </thead>`;
+
+    const tbody = `<tbody>${rows.map(s => `
+      <tr>
+        <td class="student-name-cell">
+          <span class="gender-dot ${s.gender === 'b' ? 'boy' : 'girl'}"></span>${s.name}
+        </td>
+        <td class="trips-cell">${s.trips}</td>
+        <td class="val-cell">${s.totalMins}m</td>
+      </tr>`).join('')}</tbody>`;
+
+    document.getElementById('table-container').innerHTML = `<table>${thead}${tbody}</table>`;
+
+    // Daily breakdown
+    const dayMap = {};
+    filtered.forEach(h => {
+      const dayKey = isoDate(new Date(h.checkedOutAt));
+      const label = formatDateShort(h.checkedOutAt);
+      if (!dayMap[dayKey]) dayMap[dayKey] = { label, trips: 0, mins: 0, students: new Set() };
+      dayMap[dayKey].trips++;
+      dayMap[dayKey].mins += Math.floor(h.duration / 60);
+      dayMap[dayKey].students.add(h.name);
+    });
+
+    const days = Object.entries(dayMap).sort((a,b) => b[0].localeCompare(a[0]));
+
+    document.getElementById('daily-container').innerHTML = days.map(([key, d]) => `
+      <div class="day-row">
+        <div>
+          <span class="day-label">${d.label}</span>
+          <span style="color:#aaa; font-size:0.78rem; margin-left:8px;">${d.students.size} student${d.students.size!==1?'s':''}</span>
+        </div>
+        <div>
+          <span class="trips-cell" style="margin-right:16px; font-size:0.82rem;">${d.trips} trip${d.trips!==1?'s':''}</span>
+          <span class="day-val">${d.mins}m</span>
+        </div>
+      </div>`).join('');
+  };
+
+  // --- Sort ---
+  window.sortBy = function(col) {
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = false; }
+    renderReport();
+  };
+
+  // --- Tab switching ---
+  window.switchTab = function(tab) {
+    currentTab = tab;
+    ['weekly','monthly','custom'].forEach(t => {
+      document.getElementById(`controls-${t}`).style.display = t === tab ? 'flex' : 'none';
+      document.getElementById(`tab-${t}`).classList.toggle('active', t === tab);
+    });
+    renderReport();
+  };
+
+  // --- Export CSV ---
+  window.exportCSV = function() {
+    const range = getDateRange();
+    if (!range) return;
+    const filtered = allHistory.filter(h => h.checkedOutAt >= range.start && h.checkedOutAt <= range.end);
+
+    const rows = [['Student', 'Gender', 'Teacher', 'Date', 'Time Out', 'Duration (min)']];
+    filtered.forEach(h => {
+      const d = new Date(h.checkedOutAt);
+      const student = STUDENTS.find(s => s.name === h.name);
+      rows.push([
+        h.name,
+        student ? (student.gender === 'b' ? 'Boy' : 'Girl') : '',
+        h.teacher || 'Loveday',
+        isoDate(d),
+        d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        Math.floor(h.duration / 60)
+      ]);
+    });
+
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `bathroom-report-${range.label.replace(/\s+/g,'-')}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // --- Weekly Pass Usage ---
+  const WEEKLY_LIMIT = 5;
+
+  function getWeekStart(date = new Date()) {
+    const d = new Date(date);
+    const day = d.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    d.setDate(d.getDate() + diff);
+    return d.toISOString().split('T')[0];
+  }
+
+  function renderPassUsage() {
+    const container = document.getElementById('pass-usage-container');
+    const weekStart = getWeekStart();
+
+    // Count this week's checkouts per student
+    const counts = {};
+    allHistory.forEach(h => {
+      const d = new Date(h.checkedOutAt);
+      if (getWeekStart(d) !== weekStart) return;
+      counts[h.name] = (counts[h.name] || 0) + 1;
+    });
+
+    // Filter students with 3+ uses, sort by most used
+    const flagged = Object.entries(counts)
+      .filter(([, count]) => count >= 3)
+      .sort((a, b) => b[1] - a[1]);
+
+    if (!flagged.length) {
+      container.innerHTML = '<p class="no-data">No students have used 3 or more passes this week. 🎉</p>';
+      return;
+    }
+
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Used</th>
+          <th>Remaining</th>
+          <th>Status</th>
+        </tr>
+      </thead>`;
+
+    const tbody = document.createElement('tbody');
+    flagged.forEach(([name, count]) => {
+      const remaining = WEEKLY_LIMIT - count;
+      const student = STUDENTS.find(s => s.name === name);
+      const status = remaining <= 0
+        ? '<span style="color:#cc0000;font-weight:700;">⛔ Out of passes</span>'
+        : `<span style="color:#e6a817;font-weight:700;">⚠️ ${remaining} left</span>`;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="student-name-cell">
+          <span class="gender-dot ${student?.gender === 'b' ? 'boy' : 'girl'}"></span>${name}
+        </td>
+        <td class="trips-cell">${count} / ${WEEKLY_LIMIT}</td>
+        <td class="val-cell">${Math.max(0, remaining)}</td>
+        <td>${status}</td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    container.innerHTML = '';
+    container.appendChild(table);
+  }
+
+  // Hook into the main data load
+  const _origRender = window.renderReport;
+  window.renderReport = function() {
+    _origRender();
+    renderPassUsage();
+  };
+  function populateStudentFilter() {
+    const sel = document.getElementById('dm-student-filter');
+    const names = [...new Set(allHistory.map(h => h.name))].sort();
+    sel.innerHTML = '<option value="">-- All Students --</option>';
+    names.forEach(name => {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.textContent = name;
+      sel.appendChild(opt);
+    });
+  }
+
+  window.renderDataManager = function() {
+    const studentFilter = document.getElementById('dm-student-filter').value;
+    const dateFilter = document.getElementById('dm-date-filter').value;
+
+    let entries = [...allHistory];
+    if (studentFilter) entries = entries.filter(h => h.name === studentFilter);
+    if (dateFilter) entries = entries.filter(h => isoDate(new Date(h.checkedOutAt)) === dateFilter);
+
+    const container = document.getElementById('dm-container');
+    if (!entries.length) {
+      container.innerHTML = '<p class="no-data">No entries match your filters.</p>';
+      return;
+    }
+
+    container.innerHTML = '';
+    const table = document.createElement('table');
+    table.innerHTML = `
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Teacher</th>
+          <th>Date</th>
+          <th>Time Out</th>
+          <th>Duration</th>
+          <th>Action</th>
+        </tr>
+      </thead>`;
+
+    const tbody = document.createElement('tbody');
+    entries.forEach(h => {
+      const d = new Date(h.checkedOutAt);
+      const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const dur = Math.floor(h.duration / 60);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="student-name-cell">
+          <span class="gender-dot ${h.gender === 'b' ? 'boy' : 'girl'}"></span>${h.name}
+        </td>
+        <td>${h.teacher || 'Loveday'}</td>
+        <td>${dateStr}</td>
+        <td>${timeStr}</td>
+        <td class="val-cell">${dur < 1 ? '<1m' : dur + 'm'}</td>
+        <td>
+          <button class="btn btn-sm" style="background:#cc0000;" onclick="deleteEntry('${h._key}', '${h.name}', '${timeStr} on ${dateStr}')">Delete</button>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    table.appendChild(tbody);
+    container.appendChild(table);
+  };
+
+  window.deleteEntry = async function(key, name, label) {
+    if (!confirm(`Delete this entry?\n\n${name} — ${label}\n\nThis cannot be undone.`)) return;
+    try {
+      await remove(ref(db, `bathroom/history/${key}`));
+    } catch(e) {
+      alert('Error deleting entry. Please try again.');
+    }
+  };
+</script>
+</body>
+</html>

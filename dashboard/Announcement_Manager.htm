@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Announcement Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --card: #ffffff;
+    --red: #cc0000;
+    --red-dark: #990000;
+    --text: #111111;
+    --muted: #666666;
+    --radius: 12px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Montserrat', sans-serif;
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  header { margin-bottom: 28px; }
+
+  h1 {
+    font-size: 2rem;
+    font-weight: 800;
+    color: #ffffff;
+    text-transform: uppercase;
+  }
+
+  header p { color: #888; font-size: 0.85rem; margin-top: 4px; }
+
+  .card {
+    background: var(--card);
+    border-radius: var(--radius);
+    border: 2px solid var(--red);
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+
+  .card h2 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 18px;
+  }
+
+  label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+
+  input[type="date"], input[type="text"], textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.92rem;
+    color: var(--text);
+    background: white;
+    margin-bottom: 14px;
+    transition: border-color 0.15s;
+  }
+
+  input:focus, textarea:focus { outline: none; border-color: var(--red); }
+
+  textarea { resize: vertical; min-height: 90px; }
+
+  .form-row { display: grid; grid-template-columns: 200px 1fr; gap: 16px; }
+
+  .btn {
+    padding: 11px 24px;
+    background: var(--red);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: background 0.15s;
+  }
+
+  .btn:hover { background: var(--red-dark); }
+
+  .btn-outline {
+    background: transparent;
+    border: 2px solid #ddd;
+    color: var(--muted);
+  }
+  .btn-outline:hover { border-color: var(--red); color: var(--red); background: transparent; }
+
+  .btn-danger {
+    background: transparent;
+    border: 2px solid #ffcccc;
+    color: var(--red);
+    padding: 6px 14px;
+    font-size: 0.78rem;
+  }
+  .btn-danger:hover { background: var(--red); color: white; border-color: var(--red); }
+
+  .btn-edit {
+    background: transparent;
+    border: 2px solid #ddd;
+    color: #555;
+    padding: 6px 14px;
+    font-size: 0.78rem;
+  }
+  .btn-edit:hover { border-color: #555; background: #f5f5f5; }
+
+  /* Announcement list */
+  .announcement-item {
+    border: 1px solid #eee;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    transition: border-color 0.15s;
+  }
+
+  .announcement-item:hover { border-color: #ccc; }
+
+  .announcement-item.editing { border-color: var(--red); background: #fff8f8; }
+
+  .ann-date {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .ann-text {
+    font-size: 0.92rem;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  .ann-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
+  .ann-link {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 6px 14px;
+    background: var(--red);
+    color: white;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .ann-link:hover { background: var(--red-dark); }
+
+  .preview-link {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 5px 12px;
+    background: #cc0000;
+    color: white;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-decoration: none;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .badge-scheduled {
+    display: inline-block;
+    background: #e6a817;
+    color: white;
+    border-radius: 20px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    padding: 2px 10px;
+    margin-left: 8px;
+    vertical-align: middle;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .announcement-item.scheduled { border-color: #e6a817; background: #fffbf0; }
+
+  .empty-msg { color: var(--muted); font-style: italic; font-size: 0.88rem; padding: 8px 0; }
+
+  /* Loading */
+  #loading {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 9999;
+  }
+
+  #loading p { color: #aaa; font-size: 1rem; font-weight: 600; }
+
+  .spinner {
+    width: 40px; height: 40px;
+    border: 4px solid #333;
+    border-top-color: var(--red);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  #alert {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--red);
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.92rem;
+    display: none;
+    z-index: 9999;
+    animation: slideIn 0.2s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+  }
+
+  /* Preview */
+  .preview-box {
+    background: #0a0a0a;
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 8px;
+  }
+
+  .preview-item {
+    border-left: 3px solid var(--red);
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    background: #1a1a1a;
+    border-radius: 0 8px 8px 0;
+  }
+
+  .preview-item:last-child { margin-bottom: 0; }
+
+  .preview-date {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+
+  .preview-text {
+    font-size: 0.88rem;
+    color: #ffffff;
+    line-height: 1.5;
+  }
+
+  .preview-empty {
+    color: #555;
+    font-style: italic;
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 12px 0;
+  }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p>Connecting to Firebase...</p>
+</div>
+
+<div id="alert"></div>
+
+<header>
+  <h1>Announcement Manager</h1>
+  <p>Announcements update live on your Google Site</p>
+</header>
+
+<!-- Add / Edit Form -->
+<div class="card">
+  <h2 id="form-title">Add New Announcement</h2>
+  <div class="form-row">
+    <div>
+      <label>Date</label>
+      <input type="date" id="ann-date">
+    </div>
+    <div>
+      <label>Announcement Text</label>
+      <textarea id="ann-text" placeholder="Type your announcement here..."></textarea>
+    </div>
+  </div>
+  <div style="margin-bottom:14px;">
+    <label>Link URL <span style="font-weight:500;text-transform:none;font-size:0.75rem;">(optional)</span></label>
+    <input type="text" id="ann-url" placeholder="https://...">
+    <label style="margin-top:-8px;">Link Button Text <span style="font-weight:500;text-transform:none;font-size:0.75rem;">(optional — defaults to "Click Here")</span></label>
+    <input type="text" id="ann-url-label" placeholder="e.g. Fill Out the Form, Sign Up Here...">
+  </div>
+  <div style="display:flex; gap:10px;">
+    <button class="btn" onclick="saveAnnouncement()">Save Announcement</button>
+    <button class="btn btn-outline" id="cancel-btn" onclick="cancelEdit()" style="display:none;">Cancel</button>
+  </div>
+</div>
+
+<!-- Announcement List -->
+<div class="card">
+  <h2>All Announcements</h2>
+  <div id="announcement-list"><p class="empty-msg">No announcements yet.</p></div>
+</div>
+
+<!-- Live Preview -->
+<div class="card" style="border-color:#333;">
+  <h2 style="color:#888;">Live Preview <span style="font-size:0.75rem; font-weight:500; color:#888; text-transform:none;">(how it looks on your site)</span></h2>
+  <div class="preview-box" id="preview-box">
+    <p class="preview-empty">No announcements to preview.</p>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, push, set, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyBsja7ruNaLkTDTxyga9qd9TZG2Zz5AjHA",
+    authDomain: "bathroom-check-out.firebaseapp.com",
+    databaseURL: "https://bathroom-check-out-default-rtdb.firebaseio.com",
+    projectId: "bathroom-check-out",
+    storageBucket: "bathroom-check-out.firebasestorage.app",
+    messagingSenderId: "385219454253",
+    appId: "1:385219454253:web:970acbfe28672f73c45fa4"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  let announcements = [];
+  let editingKey = null;
+
+  // Set today's date as default
+  const todayStr = new Date().toISOString().split('T')[0];
+  document.getElementById('ann-date').value = todayStr;
+
+  // --- Load announcements ---
+  onValue(ref(db, 'announcements'), (snapshot) => {
+    const data = snapshot.val() || {};
+    announcements = Object.entries(data)
+      .map(([k, v]) => ({ ...v, _key: k }))
+      .sort((a, b) => b.date.localeCompare(a.date));
+    renderList();
+    renderPreview();
+    document.getElementById('loading').style.display = 'none';
+  });
+
+  // --- Save ---
+  window.saveAnnouncement = async function() {
+    const date = document.getElementById('ann-date').value;
+    const publishDate = date;
+    const text = document.getElementById('ann-text').value.trim();
+    const url = document.getElementById('ann-url').value.trim();
+    const urlLabel = document.getElementById('ann-url-label').value.trim() || 'Click Here';
+    if (!date) { showAlert('Please select an announcement date.'); return; }
+    if (!text) { showAlert('Please enter announcement text.'); return; }
+
+    const entry = { date, publishDate, text };
+    if (url) { entry.url = url; entry.urlLabel = urlLabel; }
+
+    if (editingKey) {
+      await set(ref(db, `announcements/${editingKey}`), entry);
+      showAlert('Announcement updated!');
+      cancelEdit();
+    } else {
+      await push(ref(db, 'announcements'), entry);
+      showAlert(publishDate > todayStr ? `Announcement scheduled for ${publishDate}!` : 'Announcement added!');
+      document.getElementById('ann-text').value = '';
+      document.getElementById('ann-url').value = '';
+      document.getElementById('ann-url-label').value = '';
+      document.getElementById('ann-date').value = todayStr;
+    }
+  };
+
+  // --- Edit ---
+  window.editAnnouncement = function(key) {
+    const ann = announcements.find(a => a._key === key);
+    if (!ann) return;
+    editingKey = key;
+    document.getElementById('ann-date').value = ann.date;
+    document.getElementById('ann-text').value = ann.text;
+    document.getElementById('ann-url').value = ann.url || '';
+    document.getElementById('ann-url-label').value = ann.urlLabel || '';
+    document.getElementById('form-title').textContent = 'Edit Announcement';
+    document.getElementById('cancel-btn').style.display = 'inline-block';
+    document.querySelector('.card').scrollIntoView({ behavior: 'smooth' });
+    document.querySelectorAll('.announcement-item').forEach(el => el.classList.remove('editing'));
+    const el = document.getElementById(`ann-${key}`);
+    if (el) el.classList.add('editing');
+  };
+
+  // --- Cancel edit ---
+  window.cancelEdit = function() {
+    editingKey = null;
+    document.getElementById('ann-date').value = todayStr;
+    document.getElementById('ann-text').value = '';
+    document.getElementById('ann-url').value = '';
+    document.getElementById('ann-url-label').value = '';
+    document.getElementById('form-title').textContent = 'Add New Announcement';
+    document.getElementById('cancel-btn').style.display = 'none';
+    document.querySelectorAll('.announcement-item').forEach(el => el.classList.remove('editing'));
+  };
+
+  // --- Delete ---
+  window.deleteAnnouncement = async function(key) {
+    if (!confirm('Delete this announcement? This cannot be undone.')) return;
+    await remove(ref(db, `announcements/${key}`));
+    showAlert('Announcement deleted.');
+  };
+
+  // --- Render list ---
+  function renderList() {
+    const container = document.getElementById('announcement-list');
+    if (!announcements.length) {
+      container.innerHTML = '<p class="empty-msg">No announcements yet.</p>';
+      return;
+    }
+    container.innerHTML = '';
+
+    const today = new Date().toISOString().split('T')[0];
+    const live = announcements.filter(a => (a.publishDate || a.date) <= today);
+    const scheduled = announcements.filter(a => (a.publishDate || a.date) > today);
+
+    // Show scheduled first with a header
+    if (scheduled.length) {
+      const header = document.createElement('p');
+      header.style.cssText = 'font-size:0.72rem;font-weight:700;color:#e6a817;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;';
+      header.textContent = '⏰ Scheduled';
+      container.appendChild(header);
+      scheduled.sort((a,b) => (a.publishDate||a.date).localeCompare(b.publishDate||b.date)).forEach(ann => renderAnnItem(ann, container, true));
+    }
+
+    if (live.length) {
+      if (scheduled.length) {
+        const header = document.createElement('p');
+        header.style.cssText = 'font-size:0.72rem;font-weight:700;color:#22c55e;text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 10px;';
+        header.textContent = '✓ Live';
+        container.appendChild(header);
+      }
+      live.forEach(ann => renderAnnItem(ann, container, false));
+    }
+  }
+
+  function renderAnnItem(ann, container, isScheduled) {
+    const d = new Date(ann.date + 'T12:00:00');
+    const dateStr = d.toLocaleDateString([], { month: 'long', day: 'numeric', year: 'numeric' });
+    const publishDate = ann.publishDate || ann.date;
+    const div = document.createElement('div');
+    div.className = `announcement-item${isScheduled ? ' scheduled' : ''}`;
+    div.id = `ann-${ann._key}`;
+    const linkHtml = ann.url ? `<a href="${ann.url}" target="_blank" class="ann-link">${ann.urlLabel || 'Click Here'}</a>` : '';
+    const scheduledHtml = isScheduled ? `<div style="font-size:0.72rem;color:#e6a817;font-weight:600;margin-top:4px;">Goes live: ${publishDate}</div>` : '';
+    div.innerHTML = `
+      <div>
+        <div class="ann-date">${dateStr}${isScheduled ? '<span class="badge-scheduled">Scheduled</span>' : ''}</div>
+        <div class="ann-text">${ann.text}</div>
+        ${scheduledHtml}
+        ${linkHtml}
+      </div>
+      <div class="ann-actions">
+        <button class="btn btn-edit" onclick="editAnnouncement('${ann._key}')">Edit</button>
+        <button class="btn btn-danger" onclick="deleteAnnouncement('${ann._key}')">Delete</button>
+      </div>`;
+    container.appendChild(div);
+  }
+
+  // --- Render preview ---
+  function renderPreview() {
+    const container = document.getElementById('preview-box');
+    const today = new Date().toISOString().split('T')[0];
+    const recent = announcements.filter(a => (a.publishDate || a.date) <= today).slice(0, 3);
+    if (!recent.length) {
+      container.innerHTML = '<p class="preview-empty">No live announcements to preview.</p>';
+      return;
+    }
+    container.innerHTML = '';
+    recent.forEach(ann => {
+      const d = new Date(ann.date + 'T12:00:00');
+      const dateStr = d.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' });
+      const div = document.createElement('div');
+      div.className = 'preview-item';
+      const linkHtml = ann.url ? `<a href="${ann.url}" target="_blank" class="preview-link">${ann.urlLabel || 'Click Here'}</a>` : '';
+      div.innerHTML = `
+        <div class="preview-date">${dateStr}</div>
+        <div class="preview-text">${ann.text}</div>
+        ${linkHtml}`;
+      container.appendChild(div);
+    });
+  }
+
+  function showAlert(msg) {
+    const el = document.getElementById('alert');
+    el.textContent = msg;
+    el.style.display = 'block';
+    clearTimeout(window._alertTimer);
+    window._alertTimer = setTimeout(() => el.style.display = 'none', 3000);
+  }
+</script>
+</body>
+</html>
